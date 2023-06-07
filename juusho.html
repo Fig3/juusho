@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Juusho</title>
+  <style>
+    #map {
+      height: 400px;
+      width: 50%;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>住所登録</h1>
+  <label for="api-key-input">Google Maps APIキー:</label>
+  <input type="password" id="api-key-input">
+  <button onclick="loadMap()">マップを表示</button>
+  <div id="map"></div>
+  <div id="info"></div>
+
+  <script>
+
+    let marker = null;
+
+    // 入力されたキーを元にGoogleMapsAPIを叩きinitMap()を行う
+    function loadMap() {
+      const apiKey = document.getElementById("api-key-input").value;
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
+      document.head.appendChild(script);
+    }
+
+    // GoogleMapsAPIのロード
+    function initMap() {
+
+      // 初期位置の設定（東京タワーの緯度経度）
+      const initialPosition = { lat: 35.6585769, lng: 139.7454506 };
+      // mapにマップを表示
+      const map = new google.maps.Map(document.getElementById("map"), {
+        center: initialPosition,
+        zoom: 15,
+      });
+
+      // クリックイベントの追加
+      map.addListener("click", (event) => {
+        // マップピンを削除する
+        deleteMaker();
+        // クリックした位置にマップピンを立てる
+        placeMarker(event.latLng, map);
+        // 緯度経度と住所を表示する
+        displayInfo(event.latLng);
+      });
+    }
+
+    // マップピンを削除
+    function deleteMaker() {
+      if (marker != null) marker.setMap(null);
+    }
+
+    // マップピンを立てる
+    function placeMarker(latLng, map) {
+      marker = new google.maps.Marker({
+        position: latLng,
+        title: "住所"
+      });
+      marker.setMap(map);
+    }
+
+    // マップピンの緯度経度と住所を画面に表示する
+    async function displayInfo(latLng) {
+
+      // 逆ジオコーディングのリクエストを作成
+      const geocoder = new google.maps.Geocoder();
+      const request = {
+        location: latLng,
+      };
+
+      // 逆ジオコーディングを実行し結果をinfoに追加
+      geocoder.geocode(request, (results, status) => {
+        if (status === google.maps.GeocoderStatus.OK) {
+          if (results[0]) {
+            const address = results[0].formatted_address;
+            document.getElementById("info").innerHTML =
+              "<div><div>" +
+              "<strong>緯度経度:</strong> " +
+              latLng.lat().toFixed(6) +
+              ", " +
+              latLng.lng().toFixed(6) +
+              "<br>" +
+              "<strong>住所:</strong> " +
+              address +
+              "</div>" +
+              "<button>登録</button>" +
+              "</div>"
+          } else {
+            document.getElementById("info").innerHTML = "住所が見つかりませんでした。";
+          }
+        } else {
+          document.getElementById("info").innerHTML =
+            "逆ジオコーディングのリクエストに失敗しました。";
+        }
+      });
+    }
+  </script>
+</body>
+
+</html>
